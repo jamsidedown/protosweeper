@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+option csharp_namespace = "Protosweeper.Api";
+
+package game;
+
+// Play a practice game
+service Practice {
+  rpc Play (stream PracticeRequest) returns (stream PracticeResponse);
+}
+
+// Play against another player
+service PvP {
+  rpc Play (stream PvpRequest) returns (stream PvpResponse);
+}
+
+message PracticeRequest {
+  oneof PracticeRequestType {
+    // Send a click command
+    Click click = 1;
+    // Start a new game with an optional seed to practice
+    StartPractice start = 2;
+  }
+}
+
+message PvpRequest {
+  oneof PvpRequestType {
+    // Send a click command
+    Click click = 1;
+    // Start a new game with an optional gameId to join a friend's game
+    StartPvp start = 2;
+  }
+}
+
+message PracticeResponse {
+  oneof PracticeResponseType {
+    // Something has gone wrong
+    Error error = 1;
+    // Width, height, and pre-authenticated url of game 
+    PracticeGame game = 2;
+    // Win/lose, summary message, and the seed of the game
+    End end = 3;
+    // Revealed cell coordinate and visible mine count
+    Cell cell = 4;
+    // Selected flag coordinate
+    Flag flag = 5;
+    // Triggered mine coordinate
+    Mine mine = 6;
+  }
+}
+
+message PvpResponse {
+  oneof PvpResponseType {
+    // Something has gone wrong
+    Error error = 1;
+    // Boolean for whether you have the first click or your opponent does
+    FirstMove firstMove = 2;
+    // Width, height, and pre-authenticated url of game
+    PvpGame game = 3;
+    // Win/lose, summary message, and the seed of the game
+    End end = 4;
+    // Revealed cell coordinate and visible mine count
+    Cell cell = 5;
+    // Selected flag coordinate
+    Flag flag = 6;
+    // Triggered mine coordinate
+    Mine mine = 7;
+  }
+}
+
+enum ClickType {
+  // Clear a cell
+  LEFT = 0;
+  // Mark a flag
+  RIGHT = 1;
+  // Clear all surrounding cells without flags
+  MIDDLE = 2;
+}
+
+enum Result {
+  WIN = 0;
+  LOSE = 1;
+}
+
+enum ErrorType {
+  INVALID_COMMAND = 0;
+  UNKNOWN = 1;
+}
+
+message Error {
+  ErrorType type = 1;
+  string message = 2;
+}
+
+message Click {
+  // Left, middle, or right click
+  ClickType type = 1;
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 x = 2;
+  uint32 y = 3;
+}
+
+message StartPractice {
+  // Leave seed blank for a random game
+  optional string seed = 1;
+}
+
+message StartPvp {
+  // Leave gameId blank for a random opponent
+  optional string gameId = 1;
+}
+
+message End {
+  // The result of the game (win/lose)
+  Result result = 1;
+  // End message e.g.
+  // - You cleared the board first
+  // - Opponent timed out
+  // - You set off a mine
+  string message = 2;
+  // Seed of the game for practice
+  string seed = 3;
+}
+
+message FirstMove {
+  // True if you are first to click
+  // False if your opponent is first to click
+  bool you = 1;
+}
+
+// Sent after successfully left or middle clicking a cell
+message Cell {
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 x = 1;
+  uint32 y = 2;
+  // Number of mines touching this cell
+  uint32 value = 3;
+}
+
+// Sent after right clicking a cell
+message Flag {
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+// Sent after unsuccessfully left or middle clicking a cell
+message Mine {
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+message PracticeGame {
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 width = 1;
+  uint32 height = 2;
+  // Pre-authenticated URL to visualise your own game
+  string url = 3;
+}
+
+message PvpGame {
+  // Coordinates start at (0, 0) top left
+  // (n-1, m-1) at bottom right for an NxM game
+  uint32 width = 1;
+  uint32 height = 2;
+  // Pre-authenticated URL to visualise your own game
+  string url = 3;
+  // Game ID to share with a friend
+  string gameId = 4;
+}
