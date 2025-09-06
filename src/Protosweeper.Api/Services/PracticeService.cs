@@ -1,4 +1,5 @@
 using Grpc.Core;
+using Protosweeper.Api.Protos;
 
 namespace Protosweeper.Api.Services;
 
