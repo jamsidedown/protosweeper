@@ -9,17 +9,25 @@
 
 <table>
     <tbody>
-        @for (var y = 0; y < Model.Height; y++)
-        {
-            <tr>
-                @for (var x = 0; x < Model.Width; x++)
-                {
-                    var id = $"cell-{x}-{y}";
-                    <td id="@id">
-                        <div class="cell">x</div>
-                    </td>
-                }
-            </tr>
-        }
+    @for (var y = 0; y < Model.Height; y++)
+    {
+        <tr>
+            @for (var x = 0; x < Model.Width; x++)
+            {
+                var id = $"cell-{x}-{y}";
+                <td>
+                    <div class="cell" id="@id"></div>
+                </td>
+            }
+        </tr>
+    }
     </tbody>
 </table>
+
+<script src="site.js"></script>
+<script type="text/javascript">
+    window.onload = () => {
+        initialiseCells();
+        connect("@Model.WsUrl");
+    };
+</script>

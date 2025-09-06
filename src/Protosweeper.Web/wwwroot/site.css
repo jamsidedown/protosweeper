@@ -27,3 +27,7 @@ td {
     border-left: 1px solid white;
     border-top: 1px solid white;
 }
+
+.clicked {
+    border: 1px transparent;
+}
