@@ -1,0 +1,25 @@
+@page
+@model MinesModel
+
+@{
+    ViewData["Title"] = "Protosweeper";
+}
+
+<h1>Difficulty: @Model.Difficulty</h1>
+
+<table>
+    <tbody>
+        @for (var y = 0; y < Model.Height; y++)
+        {
+            <tr>
+                @for (var x = 0; x < Model.Width; x++)
+                {
+                    var id = $"cell-{x}-{y}";
+                    <td id="@id">
+                        <div class="cell">x</div>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>

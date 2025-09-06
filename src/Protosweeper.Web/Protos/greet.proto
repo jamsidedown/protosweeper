@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "Protosweeper.Api";
+option csharp_namespace = "Protosweeper.Web";
 
 package greet;
 

@@ -1,0 +1,18 @@
+@page
+@model IndexModel
+
+@{
+    ViewData["Title"] = "Protosweeper";
+}
+
+<h1>Welcome</h1>
+
+<form method="get" action="/mines">
+    <select id="difficulty-select" name="difficulty">
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="expert">Expert</option>
+    </select>
+    
+    <input class="button" type="submit" value="Practice"/>
+</form>

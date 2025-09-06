@@ -1,7 +1,7 @@
 using Grpc.Core;
-using Protosweeper.Api.Protos;
+using Protosweeper.Web.Protos;
 
-namespace Protosweeper.Api.Services;
+namespace Protosweeper.Web.Services;
 
 public class PracticeService(ILogger<PracticeService> logger) : Practice.PracticeBase
 {

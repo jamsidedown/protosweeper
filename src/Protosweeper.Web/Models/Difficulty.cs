@@ -1,4 +1,4 @@
-namespace Protosweeper.Api.Models;
+namespace Protosweeper.Web.Models;
 
 public enum Difficulty
 {

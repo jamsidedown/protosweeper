@@ -1,7 +1,7 @@
 #:property TargetFramework=net10.0
-#:project ../src/Protosweeper.Api/Protosweeper.Api.csproj
+#:project ../src/Protosweeper.Web/Protosweeper.Web.csproj
 
-using Protosweeper.Api.Models;
+using Protosweeper.Web.Models;
 
 var game = GameBoard.Generate(Difficulty.Expert, new XyPair(4, 4));
 

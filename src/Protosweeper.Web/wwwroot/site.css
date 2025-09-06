@@ -1,0 +1,29 @@
+body {
+    font-family: monospace;
+    background-color: #c3c7cb;
+}
+
+table {
+    border-collapse: collapse;
+    border-top: 3px solid #868a8e;
+    border-left: 3px solid #868a8e;
+    border-right: 3px solid white;
+    border-bottom: 3px solid white;
+}
+
+td {
+    text-align: center;
+    padding: 0;
+    background-color: #c3c7cb;
+}
+
+.cell {
+    user-select: none;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    border-right: 1px solid black;
+    border-bottom: 1px solid black;
+    border-left: 1px solid white;
+    border-top: 1px solid white;
+}

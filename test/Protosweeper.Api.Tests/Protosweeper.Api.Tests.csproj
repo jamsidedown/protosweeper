@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Protosweeper.Api\Protosweeper.Api.csproj" />
+    <ProjectReference Include="..\..\src\Protosweeper.Web\Protosweeper.Web.csproj" />
   </ItemGroup>
 
 </Project>

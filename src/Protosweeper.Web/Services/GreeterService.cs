@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace Protosweeper.Api.Services;
+namespace Protosweeper.Web.Services;
 
 public class GreeterService(ILogger<GreeterService> logger) : Greeter.GreeterBase
 {

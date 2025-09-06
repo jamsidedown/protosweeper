@@ -1,7 +1,6 @@
 using System.Text;
-using Protosweeper.Api.Exceptions;
 
-namespace Protosweeper.Api.Models;
+namespace Protosweeper.Web.Models;
 
 public class GameBoard
 {
@@ -9,8 +8,8 @@ public class GameBoard
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
-        var dimensions = GetDimensions(difficulty);
-        var mineCount = GetMineCount(difficulty);
+        var dimensions = Definitions.GetDimensions(difficulty);
+        var mineCount = Definitions.GetMineCount(difficulty);
 
         var coords = Enumerable.Range(0, dimensions.X)
             .SelectMany(x => Enumerable.Range(0, dimensions.Y).Select(y => new XyPair(x, y)))
@@ -26,24 +25,6 @@ public class GameBoard
         };
     }
 
-    private static XyPair GetDimensions(Difficulty difficulty) =>
-        difficulty switch
-        {
-            Difficulty.Beginner => new XyPair(9, 9),
-            Difficulty.Intermediate => new XyPair(16, 16),
-            Difficulty.Expert => new XyPair(30, 16),
-            _ => throw new InvalidDifficultyException(difficulty)
-        };
-    
-    private static int GetMineCount(Difficulty difficulty) =>
-        difficulty switch
-        {
-            Difficulty.Beginner => 10,
-            Difficulty.Intermediate => 40,
-            Difficulty.Expert => 99,
-            _ => throw new InvalidDifficultyException(difficulty)
-        };
-
     private static HashSet<XyPair> GetNeighbours(XyPair dimensions, XyPair cell)
         => GetNeighbours(dimensions, cell.X, cell.Y);
     
@@ -52,12 +33,8 @@ public class GameBoard
         var neighbours = new HashSet<XyPair>();
 
         for (var dx = Math.Max(x - 1, 0); dx < Math.Min(x + 2, dimensions.X); dx++)
-        {
-            for (var dy = Math.Max(y - 1, 0); dy < Math.Min(y + 2, dimensions.Y); dy++)
-            {
-                neighbours.Add(new XyPair(dx, dy));
-            }
-        }
+        for (var dy = Math.Max(y - 1, 0); dy < Math.Min(y + 2, dimensions.Y); dy++)
+            neighbours.Add(new XyPair(dx, dy));
 
         return neighbours;
     }

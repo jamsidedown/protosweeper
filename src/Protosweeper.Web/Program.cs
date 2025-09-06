@@ -1,0 +1,24 @@
+using Protosweeper.Web.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddGrpc();
+builder.Services.AddRazorPages();
+
+builder.Services.AddLogging();
+
+var app = builder.Build();
+
+app.MapGrpcService<GreeterService>();
+app.MapGrpcService<PracticeService>();
+app.MapGrpcService<PvpService>();
+
+app.UseRouting();
+app.MapStaticAssets();
+app.MapRazorPages().WithStaticAssets();
+
+app.MapControllers();
+app.UseWebSockets();
+
+app.Run();
