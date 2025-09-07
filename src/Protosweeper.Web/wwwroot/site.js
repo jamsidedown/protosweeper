@@ -1,4 +1,7 @@
+let url;
+let difficulty;
 let websocket;
+let gameStarted = false;
 
 function connect(url) {
     websocket = new WebSocket(url);
@@ -10,6 +13,7 @@ function connect(url) {
         }
         
         const data = JSON.parse(event.data);
+        console.log(data);
         
         if (data.error) {
             console.log("Got error");
@@ -17,18 +21,39 @@ function connect(url) {
             return;
         }
         
-        if (data.cell) {
-            const x = data.cell.x;
-            const y = data.cell.y;
-            const value = data.cell.value;
+        if (data.type === "cell") {
+            const { x, y, count } = data;
             const id = `cell-${x}-${y}`;
-            const cellClass = data.cell.class;
             const cell = document.getElementById(id);
             if (cell) {
-                cell.innerText = value;
-                cell.className = cellClass;
+                cell.innerText = count > 0 ? `${count}` : " ";
+                cell.className = `cell clicked count-${count}`;
             } else {
-                console.log(`Couldn't find cell ${data.cell}`);
+                console.log(`Couldn't find cell ${data}`);
+            }
+        } else if (data.type === "flag") {
+            const {x, y} = data;
+            const id = `cell-${x}-${y}`;
+            const cell = document.getElementById(id);
+            if (cell) {
+                cell.innerText = "🚩";
+                cell.className = "cell flag";
+            }
+        } else if (data.type === "unflag") {
+            const { x, y } = data;
+            const id = `cell-${x}-${y}`;
+            const cell = document.getElementById(id);
+            if (cell) {
+                cell.innerText = " ";
+                cell.className = "cell";
+            }
+        } else if (data.type === "mine") {
+            const { x, y } = data;
+            const id = `cell-${x}-${y}`;
+            const cell = document.getElementById(id);
+            if (cell) {
+                cell.innerText = "💥";
+                cell.className = "cell clicked mine";
             }
         }
     }
@@ -57,6 +82,14 @@ function clickCell(cellId) {
         const x = parseInt(groups[1]);
         const y = parseInt(groups[2]);
         
+        if (!gameStarted) {
+            const wsUrl = `${url}?difficulty=${difficulty}&x=${x}&y=${y}`;
+            console.log(wsUrl);
+            connect(wsUrl);
+            gameStarted = true;
+            return;
+        }
+        
         let button = "left";
         if (event.button === 2) {
             button = "right";
@@ -65,17 +98,20 @@ function clickCell(cellId) {
         }
         
         const message = {
+            type: "click",
             button,
             x,
             y,
         };
         websocket.send(JSON.stringify(message));
-        cell.classList.add("clicked");
     }
     
 }
 
-function initialiseCells() {
+function initialise(_url, _difficulty) {
+    difficulty = _difficulty;
+    url = _url;
+    
     const cells = document.getElementsByClassName("cell");
     for (const cell of cells) {
         cell.addEventListener("contextmenu", e => e.preventDefault())

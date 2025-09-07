@@ -7,27 +7,28 @@
 
 <h1>Difficulty: @Model.Difficulty</h1>
 
-<table>
-    <tbody>
-    @for (var y = 0; y < Model.Height; y++)
-    {
-        <tr>
-            @for (var x = 0; x < Model.Width; x++)
-            {
-                var id = $"cell-{x}-{y}";
-                <td>
-                    <div class="cell" id="@id"></div>
-                </td>
-            }
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="row">
+    <table>
+        <tbody>
+        @for (var y = 0; y < Model.Height; y++)
+        {
+            <tr>
+                @for (var x = 0; x < Model.Width; x++)
+                {
+                    var id = $"cell-{x}-{y}";
+                    <td>
+                        <div class="cell" id="@id"></div>
+                    </td>
+                }
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
 
 <script src="site.js"></script>
 <script type="text/javascript">
     window.onload = () => {
-        initialiseCells();
-        connect("@Model.WsUrl");
+        initialise("@Model.WsUrl", "@Model.Difficulty");
     };
 </script>

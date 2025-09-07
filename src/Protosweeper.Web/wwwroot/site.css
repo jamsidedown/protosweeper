@@ -1,6 +1,13 @@
 body {
     font-family: monospace;
     background-color: #c3c7cb;
+    text-align: center;
+}
+
+.row {
+    width: 100%;
+    text-align: center;
+    align-content: center;
 }
 
 table {
@@ -12,22 +19,62 @@ table {
 }
 
 td {
+    width: 25px;
+    height: 25px;
     text-align: center;
     padding: 0;
     background-color: #c3c7cb;
 }
 
 .cell {
-    user-select: none;
     width: 25px;
     height: 25px;
     line-height: 25px;
+    user-select: none;
     border-right: 1px solid black;
     border-bottom: 1px solid black;
     border-left: 1px solid white;
     border-top: 1px solid white;
 }
 
+.count-0 {
+}
+
+.count-1 {
+    color: blue;
+}
+
+.count-2 {
+    color: green;
+}
+
+.count-3 {
+    color: red;
+}
+
+.count-4 {
+    color: navy;
+}
+
+.count-5 {
+    color: maroon;
+}
+
+.count-6 {
+    color: teal;
+}
+
+.count-7 {
+    color: black;
+}
+
+.count-8 {
+    color: black;
+}
+
+.mine {
+}
+
 .clicked {
-    border: 1px transparent;
+    border: 1px solid #c3c7cb;
 }

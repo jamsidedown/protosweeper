@@ -1,3 +1,4 @@
+using Protosweeper.Web.Controllers;
 using Protosweeper.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,4 +22,12 @@ app.MapRazorPages().WithStaticAssets();
 app.MapControllers();
 app.UseWebSockets();
 
+var shutdownTask = Task.Run(async () =>
+{
+    app.Lifetime.ApplicationStopping.WaitHandle.WaitOne();
+    await WebsocketController.Shutdown();
+});
+
 app.Run();
+
+await shutdownTask;

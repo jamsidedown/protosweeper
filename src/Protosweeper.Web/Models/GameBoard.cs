@@ -1,10 +1,18 @@
 using System.Text;
+using System.Text.Json;
+using System.Threading.Channels;
 
 namespace Protosweeper.Web.Models;
 
 public class GameBoard
 {
+    public required Channel<IGameRequest> Requests { get; init; }
+    public required Channel<IGameResponse> Responses { get; init; }
+    
     public int[,] Cells { get; private set; } = new int[0, 0];
+    public Cell[,] States { get; private set; } = new Cell[0, 0];
+    public XyPair InitialClick { get; private set; }
+    public XyPair Dimensions { get; private set; }
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
@@ -22,7 +30,93 @@ public class GameBoard
         return new GameBoard
         {
             Cells = GetCells(dimensions, mines),
+            States = new Cell[dimensions.X, dimensions.Y],
+            Dimensions = dimensions,
+            InitialClick = initialClick,
+            Requests = Channel.CreateBounded<IGameRequest>(256),
+            Responses = Channel.CreateBounded<IGameResponse>(256),
         };
+    }
+
+    public async Task Run(CancellationToken token)
+    {
+        var receiver = Requests.Reader;
+        var sender = Responses.Writer;
+
+        foreach (var response in Click(new GameRequestClick { Button = "left", X = InitialClick.X, Y = InitialClick.Y }))
+        {
+            await sender.WriteAsync(response, token);
+        }
+
+        await foreach (var request in receiver.ReadAllAsync(token))
+        {
+            var responses = request switch
+            {
+                GameRequestClick click => Click(click),
+                _ => [],
+            };
+
+            foreach (var response in responses)
+            {
+                await sender.WriteAsync(response, token);
+            }
+        }
+    }
+
+    private IEnumerable<IGameResponse> Click(GameRequestClick click)
+    {
+        var x = click.X;
+        var y = click.Y;
+        
+        Console.WriteLine(JsonSerializer.Serialize(click));
+
+        if (click.Button.ToLower() == "left")
+        {
+            foreach (var response in Reveal(x, y))
+                yield return response;
+        }
+        else if (click.Button.ToLower() == "right")
+        {
+            var state = States[x, y];
+            if (state == Cell.Hidden)
+            {
+                States[x, y] = Cell.Flagged;
+                yield return new FlagResponse { X = x, Y = y };
+            }
+            else if (state == Cell.Flagged)
+            {
+                States[x, y] = Cell.Hidden;
+                yield return new UnflagResponse { X = x, Y = y };
+            }
+        }
+    }
+
+    private IEnumerable<IGameResponse> Reveal(int x, int y)
+    {
+        var cell = Cells[x, y];
+        var initialState = States[x, y];
+
+        if (cell == -1)
+        {
+            yield return new MineResponse { X = x, Y = y };
+            States[x, y] = Cell.Exploded;
+            yield break;
+        }
+        
+        yield return new CellResponse { X = x, Y = y, Count = cell };
+        States[x, y] = Cell.Revealed;
+
+        if ((cell == 0 && initialState == Cell.Hidden) || (cell != 0 && initialState == Cell.Revealed && CountFlaggedNeighbours(x, y) == cell))
+        {
+            foreach (var neighbour in GetNeighbours(Dimensions, x, y).Where(n => States[n.X, n.Y] == Cell.Hidden))
+            foreach (var response in Reveal(neighbour.X, neighbour.Y))
+                yield return response;
+        }
+    }
+
+    private int CountFlaggedNeighbours(int x, int y)
+    {
+        return GetNeighbours(Dimensions, x, y).Count(n => States[n.X, n.Y] == Cell.Flagged);
     }
 
     private static HashSet<XyPair> GetNeighbours(XyPair dimensions, XyPair cell)
@@ -65,7 +159,6 @@ public class GameBoard
 
     public static void Print(int[,] cells)
     {
-
         for (var y = 0; y < cells.GetLength(1); y++)
         {
             var line = new StringBuilder();

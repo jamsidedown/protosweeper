@@ -54,4 +54,9 @@ public static class WebsocketExtensions
         while (ConnectingStates.Contains(websocket.State))
             await Task.Delay(TimeSpan.FromMilliseconds(10), token);
     }
+    
+    public static async Task GracefullyClose(this WebSocket websocket, CancellationToken token)
+    {
+        await websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Connection closed", token);
+    }
 }
