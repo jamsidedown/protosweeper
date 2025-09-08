@@ -1,11 +1,14 @@
 body {
     font-family: monospace;
-    background-color: #c3c7cb;
+    background-color: black;
+    color: limegreen;
     text-align: center;
 }
 
 .row {
     width: 100%;
+    display: flex;
+    justify-content: center;
     text-align: center;
     align-content: center;
 }

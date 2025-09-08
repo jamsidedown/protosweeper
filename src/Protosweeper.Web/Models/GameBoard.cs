@@ -43,23 +43,31 @@ public class GameBoard
         var receiver = Requests.Reader;
         var sender = Responses.Writer;
 
-        foreach (var response in Click(new GameRequestClick { Button = "left", X = InitialClick.X, Y = InitialClick.Y }))
+        try
         {
-            await sender.WriteAsync(response, token);
-        }
-
-        await foreach (var request in receiver.ReadAllAsync(token))
-        {
-            var responses = request switch
-            {
-                GameRequestClick click => Click(click),
-                _ => [],
-            };
-
-            foreach (var response in responses)
+            foreach (var response in Click(new GameRequestClick
+                         { Button = "left", X = InitialClick.X, Y = InitialClick.Y }))
             {
                 await sender.WriteAsync(response, token);
             }
+
+            await foreach (var request in receiver.ReadAllAsync(token))
+            {
+                var responses = request switch
+                {
+                    GameRequestClick click => Click(click),
+                    _ => [],
+                };
+
+                foreach (var response in responses)
+                {
+                    await sender.WriteAsync(response, token);
+                }
+            }
+        }
+        catch (OperationCanceledException _)
+        {
+            Console.WriteLine("Cancellation caught in Run");
         }
     }
 
@@ -72,6 +80,9 @@ public class GameBoard
 
         if (click.Button.ToLower() == "left")
         {
+            if (States[x, y] == Cell.Flagged)
+                yield break;
+            
             foreach (var response in Reveal(x, y))
                 yield return response;
         }

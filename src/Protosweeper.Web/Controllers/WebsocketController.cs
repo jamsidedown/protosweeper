@@ -55,42 +55,59 @@ public class WebsocketController(ILogger<WebsocketController> logger) : Controll
     private async Task HandleRequests(WebsocketState state, CancellationToken token)
     {
         var channelWriter = state.Game.Requests.Writer;
-        
-        while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested && !token.IsCancellationRequested)
+
+        try
         {
-            var message = await state.Websocket.ReceiveMessage(token);
+            while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested &&
+                   !token.IsCancellationRequested)
+            {
+                var message = await state.Websocket.ReceiveMessage(token);
 
-            if (message == "")
-                continue;
+                if (message == "")
+                    continue;
 
-            var click = JsonSerializer.Deserialize<GameRequestClick>(message);
-            
-            if (click is null)
-                continue;
+                var click = JsonSerializer.Deserialize<GameRequestClick>(message);
 
-            await channelWriter.WriteAsync(click, token);
+                if (click is null)
+                    continue;
+
+                await channelWriter.WriteAsync(click, token);
+            }
+        }
+        catch (OperationCanceledException _)
+        {
+            Console.WriteLine("Cancellation caught in HandleRequests");
         }
     }
     
     private async Task HandleResponses(WebsocketState state, CancellationToken token)
     {
         var channelReader = state.Game.Responses.Reader;
-        
-        while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested && !token.IsCancellationRequested)
+
+        try
         {
-            var response = await channelReader.ReadAsync(token);
-
-            var task = response switch
+            while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested &&
+                   !token.IsCancellationRequested)
             {
-                MineResponse res => state.Websocket.SendMessage(res, token),
-                CellResponse res => state.Websocket.SendMessage(res, token),
-                FlagResponse res => state.Websocket.SendMessage(res, token),
-                UnflagResponse res => state.Websocket.SendMessage(res, token),
-                _ => Task.FromResult(false),
-            };
+                var response = await channelReader.ReadAsync(token);
 
-            await task;
+                var task = response switch
+                {
+                    MineResponse res => state.Websocket.SendMessage(res, token),
+                    CellResponse res => state.Websocket.SendMessage(res, token),
+                    FlagResponse res => state.Websocket.SendMessage(res, token),
+                    UnflagResponse res => state.Websocket.SendMessage(res, token),
+                    _ => Task.FromResult(false),
+                };
+
+                await task;
+            }
         }
+        catch (OperationCanceledException _)
+        {
+            Console.WriteLine("Cancellation caught in HandleResponses");
+        }
+        
     }
 
     public static async Task Shutdown()
