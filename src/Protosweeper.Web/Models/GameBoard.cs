@@ -9,8 +9,11 @@ public class GameBoard
     public required Channel<IGameRequest> Requests { get; init; }
     public required Channel<IGameResponse> Responses { get; init; }
     
+    public HashSet<XyPair> Mines { get; private set; }
+    public HashSet<XyPair> Clear { get; private set; }
+    public HashSet<XyPair> Flagged { get; private set; }
+    public HashSet<XyPair> Cleared { get; private set; }
     public int[,] Cells { get; private set; } = new int[0, 0];
-    public Cell[,] States { get; private set; } = new Cell[0, 0];
     public XyPair InitialClick { get; private set; }
     public XyPair Dimensions { get; private set; }
 
@@ -25,14 +28,18 @@ public class GameBoard
 
         var safe = GetNeighbours(dimensions, initialClick);
 
-        var mines = coords.Except(safe).Shuffle().Take(mineCount).ToArray();
+        var mines = coords.Except(safe).Shuffle().Take(mineCount).ToHashSet();
+        var clear = coords.Except(mines).ToHashSet();
 
         return new GameBoard
         {
-            Cells = GetCells(dimensions, mines),
-            States = new Cell[dimensions.X, dimensions.Y],
+            Cells = GetCells(dimensions, mines.ToArray()),
             Dimensions = dimensions,
             InitialClick = initialClick,
+            Mines = mines,
+            Clear = clear,
+            Flagged = [],
+            Cleared = [],
             Requests = Channel.CreateBounded<IGameRequest>(256),
             Responses = Channel.CreateBounded<IGameResponse>(256),
         };
@@ -75,12 +82,13 @@ public class GameBoard
     {
         var x = click.X;
         var y = click.Y;
+        var coord = new XyPair(x, y);
         
         Console.WriteLine(JsonSerializer.Serialize(click));
 
         if (click.Button.ToLower() == "left")
         {
-            if (States[x, y] == Cell.Flagged)
+            if (Flagged.Contains(coord))
                 yield break;
             
             foreach (var response in Reveal(x, y))
@@ -88,16 +96,17 @@ public class GameBoard
         }
         else if (click.Button.ToLower() == "right")
         {
-            var state = States[x, y];
-            if (state == Cell.Hidden)
+            if (!Flagged.Contains(coord) && !Cleared.Contains(coord))
             {
-                States[x, y] = Cell.Flagged;
+                Flagged.Add(coord);
                 yield return new FlagResponse { X = x, Y = y };
+                yield return new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
             }
-            else if (state == Cell.Flagged)
+            else if (Flagged.Contains(coord))
             {
-                States[x, y] = Cell.Hidden;
+                Flagged.Remove(coord);
                 yield return new UnflagResponse { X = x, Y = y };
+                yield return new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
             }
         }
     }
@@ -105,29 +114,44 @@ public class GameBoard
     private IEnumerable<IGameResponse> Reveal(int x, int y)
     {
         var cell = Cells[x, y];
-        var initialState = States[x, y];
+        var coord = new XyPair(x, y);
 
         if (cell == -1)
         {
-            yield return new MineResponse { X = x, Y = y };
-            States[x, y] = Cell.Exploded;
+            yield return new LoseResponse();
+            foreach (var mine in Mines.OrderBy(coord.PixelDistance))
+            {
+                Thread.Sleep(50);
+                yield return new MineResponse { X = mine.X, Y = mine.Y };
+            }
+
+            yield break;
+        }
+
+        var wasCleared = Cleared.Contains(coord);
+        yield return new CellResponse { X = x, Y = y, Count = cell };
+        Cleared.Add(coord);
+
+        if (Won())
+        {
+            yield return new WinResponse();
             yield break;
         }
         
-        yield return new CellResponse { X = x, Y = y, Count = cell };
-        States[x, y] = Cell.Revealed;
-
-        if ((cell == 0 && initialState == Cell.Hidden) || (cell != 0 && initialState == Cell.Revealed && CountFlaggedNeighbours(x, y) == cell))
+        if ((cell == 0 && !wasCleared) || (cell != 0 && wasCleared && CountFlaggedNeighbours(x, y) == cell))
         {
-            foreach (var neighbour in GetNeighbours(Dimensions, x, y).Where(n => States[n.X, n.Y] == Cell.Hidden))
+            foreach (var neighbour in GetNeighbours(Dimensions, x, y).Where(n => !Flagged.Contains(n) && !Cleared.Contains(n)))
             foreach (var response in Reveal(neighbour.X, neighbour.Y))
                 yield return response;
         }
     }
 
+    private bool Won() => Cleared.SetEquals(Clear);
+
     private int CountFlaggedNeighbours(int x, int y)
     {
-        return GetNeighbours(Dimensions, x, y).Count(n => States[n.X, n.Y] == Cell.Flagged);
+        // return GetNeighbours(Dimensions, x, y).Count(n => States[n.X, n.Y] == Cell.Flagged);
+        return GetNeighbours(Dimensions, x, y).Count(n => Flagged.Contains(n));
     }
 
     private static HashSet<XyPair> GetNeighbours(XyPair dimensions, XyPair cell)

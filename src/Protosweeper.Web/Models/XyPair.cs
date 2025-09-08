@@ -5,6 +5,8 @@ public readonly struct XyPair(int x, int y) : IEquatable<XyPair>
     public readonly int X = x;
     public readonly int Y = y;
 
+    public int PixelDistance(XyPair other) => Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
+
     public static XyPair operator +(XyPair left, XyPair right) => new(left.X + right.X, left.Y + right.Y);
     public static XyPair operator -(XyPair left, XyPair right) => new(left.X - right.X, left.Y - right.Y);
     public static bool operator ==(XyPair left, XyPair right) => left.Equals(right);

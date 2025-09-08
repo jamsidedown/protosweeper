@@ -2,6 +2,7 @@ let url;
 let difficulty;
 let websocket;
 let gameStarted = false;
+let ended = false;
 
 function connect(url) {
     websocket = new WebSocket(url);
@@ -55,6 +56,21 @@ function connect(url) {
                 cell.innerText = "💥";
                 cell.className = "cell clicked mine";
             }
+        } else if (data.type === "progress") {
+            const { flagged } = data;
+            const progress = document.getElementById("progress");
+            progress.innerText = flagged;
+            progress.hidden = false;
+        } else if (data.type === "win") {
+            const result = document.getElementById("result");
+            result.innerText = "You win!";
+            result.hidden = false;
+            ended = true;
+        } else if (data.type === "lose") {
+            const result = document.getElementById("result");
+            result.innerText = "You lose!";
+            result.hidden = false;
+            ended = true;
         }
     }
 
@@ -63,6 +79,9 @@ function connect(url) {
     }
 
     websocket.onclose = (event) => {
+        if (ended) {
+            return;
+        }
         console.log("Reconnecting...");
         setTimeout(() => {
             connect(url);
@@ -77,6 +96,10 @@ function clickCell(cellId) {
     return (event) => {
         console.log(event);
         console.log(cellId);
+        
+        if (ended) {
+            return;
+        }
         
         const groups = cellPattern.exec(cellId);
         const x = parseInt(groups[1]);

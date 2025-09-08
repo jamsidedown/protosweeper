@@ -97,6 +97,9 @@ public class WebsocketController(ILogger<WebsocketController> logger) : Controll
                     CellResponse res => state.Websocket.SendMessage(res, token),
                     FlagResponse res => state.Websocket.SendMessage(res, token),
                     UnflagResponse res => state.Websocket.SendMessage(res, token),
+                    ProgressResponse res => state.Websocket.SendMessage(res, token),
+                    WinResponse res => state.Websocket.SendMessage(res, token),
+                    LoseResponse res => state.Websocket.SendMessage(res, token),
                     _ => Task.FromResult(false),
                 };
 
