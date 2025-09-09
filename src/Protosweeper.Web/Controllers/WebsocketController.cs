@@ -13,7 +13,7 @@ namespace Protosweeper.Web.Controllers;
 [Route("ws")]
 public class WebsocketController(ILogger<WebsocketController> logger, GameService gameService) : ControllerBase
 {
-    private static readonly ConcurrentDictionary<Guid, WebSocket> _connections = new();
+    private static readonly ConcurrentDictionary<Guid, WebsocketState> Connections = new();
     private static bool _shutdownRequested = false;
     
     public async Task Get(string difficulty, int x, int y, CancellationToken token)
@@ -29,12 +29,13 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 logger.LogTrace("Client {id} accepted", id);
                 await websocket.WaitUntilConnected(token);
                 logger.LogTrace("Client {id} fully connected", id);
-                
+
                 var game = GameBoard.Generate(Definitions.ParseDifficulty(difficulty), new XyPair(x, y));
-                _connections.TryAdd(id, websocket);
-                logger.LogInformation("Client {id} connected with first click at ({x}, {y})", id, x, y);
-                
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var state = new WebsocketState { Websocket = websocket, Cts = cts };
+                Connections.TryAdd(id, state);
+                logger.LogInformation("Client {id} connected with first click at ({x}, {y})", id, x, y);
+
                 var requests = Channel.CreateBounded<IGameRequest>(256);
                 var responses = Channel.CreateBounded<IGameResponse>(256);
 
@@ -42,17 +43,17 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 {
                     HandleRequests(id, websocket, requests.Writer, cts.Token),
                     HandleResponses(id, websocket, responses.Reader, cts.Token),
-                    gameService.Play(id, game, requests.Reader, responses.Writer, cts),
+                    gameService.Play(id, game, requests.Reader, responses.Writer, cts.Token),
                 };
-                
+
                 logger.LogInformation("Client {id} {difficulty} game started", id, difficulty);
                 await Task.WhenAny(tasks);
-                
+
                 logger.LogInformation("Client {id} game ended", id);
 
                 await cts.CancelAsync();
                 logger.LogTrace("Client {id} cancelled token", id);
-                
+
                 await websocket.GracefullyClose(cts.Token);
                 logger.LogInformation("Client {id} gracefully closed", id);
             }
@@ -61,11 +62,13 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 Response.StatusCode = StatusCodes.Status400BadRequest;
             }
         }
+        catch (OperationCanceledException _) {}
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
         }
+        
+        Connections.TryRemove(id, out _);
     }
 
     private async Task HandleRequests(Guid id, WebSocket websocket, ChannelWriter<IGameRequest> channel, CancellationToken token)
@@ -76,13 +79,13 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                    !token.IsCancellationRequested)
             {
                 var message = await websocket.ReceiveMessage(token);
-                logger.LogInformation("Client {id} request {message}", id, message);
+                logger.LogTrace("Client {id} request {message}", id, message);
 
                 if (message == "")
                     continue;
 
                 var click = JsonSerializer.Deserialize<GameRequestClick>(message);
-                logger.LogTrace("Client {id} click parsed {click}", id, click);
+                logger.LogInformation("Client {id} received {click}", id, click);
 
                 if (click is null)
                     continue;
@@ -107,6 +110,8 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                    !token.IsCancellationRequested)
             {
                 var response = await channel.ReadAsync(token);
+                
+                logger.LogInformation("Client {id} sending {response}", id, response);
 
                 var task = response switch
                 {
@@ -129,25 +134,24 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
         {
             logger.LogInformation("Client {id} disconnected due to CancellationToken, stopping {method}", id, nameof(HandleResponses));
         }
-        
     }
 
     public static async Task Shutdown()
     {
         _shutdownRequested = true;
-        var clients = _connections.ToList();
-
-        foreach (var (id, websocket) in clients)
+        var clients = Connections.ToList();
+        
+        foreach (var (id, state) in clients)
         {
+            var cts = state.Cts;
             try
             {
-                await websocket.SendMessage("Server shutting down");
-                await websocket.GracefullyClose(CancellationToken.None);
-                Console.WriteLine($"Client {id} disconnected");
+                await cts.CancelAsync();
+                Console.WriteLine($"Client {id} cancelled token");
             }
-            catch
+            catch (Exception _)
             {
-                Console.WriteLine($"Client {id} failed to disconnect");
+                Console.WriteLine($"Client {id} failed to cancel token");
             }
         }
     }

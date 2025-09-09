@@ -8,11 +8,12 @@ public class GameBoard
 {
     public HashSet<XyPair> Mines { get; private set; }
     public HashSet<XyPair> Clear { get; private set; }
-    public HashSet<XyPair> Flagged { get; private set; }
-    public HashSet<XyPair> Cleared { get; private set; }
+    public HashSet<XyPair> Flagged { get; private set; } = [];
+    public HashSet<XyPair> Cleared { get; private set; } = [];
     public int[,] Cells { get; private set; } = new int[0, 0];
     public XyPair InitialClick { get; private set; }
     public XyPair Dimensions { get; private set; }
+    public bool ReadOnly = false;
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
@@ -35,13 +36,14 @@ public class GameBoard
             InitialClick = initialClick,
             Mines = mines,
             Clear = clear,
-            Flagged = [],
-            Cleared = [],
         };
     }
 
     public IEnumerable<IGameResponse> Click(GameRequestClick click)
     {
+        if (ReadOnly)
+            yield break;
+        
         var x = click.X;
         var y = click.Y;
         var coord = new XyPair(x, y);

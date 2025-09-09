@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Protosweeper.Web.Models;
 
-public class ProgressResponse : GameResponseBase
+public record ProgressResponse : GameResponseBase
 {
     [JsonPropertyName("type")]
     public override string Type => "progress";

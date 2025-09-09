@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Protosweeper.Web.Models;
 
-public abstract class GameRequestBase : IGameRequest
+public abstract record GameRequestBase : IGameRequest
 {
     [JsonPropertyName("type")]
     public abstract string Type { get; }

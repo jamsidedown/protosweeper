@@ -57,6 +57,9 @@ public static class WebsocketExtensions
     
     public static async Task GracefullyClose(this WebSocket websocket, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+            return;
+        
         await websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Connection closed", token);
     }
 }
