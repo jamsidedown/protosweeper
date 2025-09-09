@@ -6,9 +6,6 @@ namespace Protosweeper.Web.Models;
 
 public class GameBoard
 {
-    public required Channel<IGameRequest> Requests { get; init; }
-    public required Channel<IGameResponse> Responses { get; init; }
-    
     public HashSet<XyPair> Mines { get; private set; }
     public HashSet<XyPair> Clear { get; private set; }
     public HashSet<XyPair> Flagged { get; private set; }
@@ -40,51 +37,14 @@ public class GameBoard
             Clear = clear,
             Flagged = [],
             Cleared = [],
-            Requests = Channel.CreateBounded<IGameRequest>(256),
-            Responses = Channel.CreateBounded<IGameResponse>(256),
         };
     }
 
-    public async Task Run(CancellationToken token)
-    {
-        var receiver = Requests.Reader;
-        var sender = Responses.Writer;
-
-        try
-        {
-            foreach (var response in Click(new GameRequestClick
-                         { Button = "left", X = InitialClick.X, Y = InitialClick.Y }))
-            {
-                await sender.WriteAsync(response, token);
-            }
-
-            await foreach (var request in receiver.ReadAllAsync(token))
-            {
-                var responses = request switch
-                {
-                    GameRequestClick click => Click(click),
-                    _ => [],
-                };
-
-                foreach (var response in responses)
-                {
-                    await sender.WriteAsync(response, token);
-                }
-            }
-        }
-        catch (OperationCanceledException _)
-        {
-            Console.WriteLine("Cancellation caught in Run");
-        }
-    }
-
-    private IEnumerable<IGameResponse> Click(GameRequestClick click)
+    public IEnumerable<IGameResponse> Click(GameRequestClick click)
     {
         var x = click.X;
         var y = click.Y;
         var coord = new XyPair(x, y);
-        
-        Console.WriteLine(JsonSerializer.Serialize(click));
 
         if (click.Button.ToLower() == "left")
         {
@@ -150,7 +110,6 @@ public class GameBoard
 
     private int CountFlaggedNeighbours(int x, int y)
     {
-        // return GetNeighbours(Dimensions, x, y).Count(n => States[n.X, n.Y] == Cell.Flagged);
         return GetNeighbours(Dimensions, x, y).Count(n => Flagged.Contains(n));
     }
 

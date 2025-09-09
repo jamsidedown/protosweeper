@@ -6,8 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddRazorPages();
-
 builder.Services.AddLogging();
+
+builder.Services.AddTransient<GameService>();
 
 var app = builder.Build();
 

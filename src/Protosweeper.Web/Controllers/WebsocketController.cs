@@ -5,14 +5,15 @@ using System.Threading.Channels;
 using Microsoft.AspNetCore.Mvc;
 using Protosweeper.Web.Extensions;
 using Protosweeper.Web.Models;
+using Protosweeper.Web.Services;
 
 namespace Protosweeper.Web.Controllers;
 
 [ApiController]
 [Route("ws")]
-public class WebsocketController(ILogger<WebsocketController> logger) : ControllerBase
+public class WebsocketController(ILogger<WebsocketController> logger, GameService gameService) : ControllerBase
 {
-    private static readonly ConcurrentDictionary<Guid, WebsocketState> _connections = new();
+    private static readonly ConcurrentDictionary<Guid, WebSocket> _connections = new();
     private static bool _shutdownRequested = false;
     
     public async Task Get(string difficulty, int x, int y, CancellationToken token)
@@ -23,22 +24,37 @@ public class WebsocketController(ILogger<WebsocketController> logger) : Controll
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {
+                logger.LogTrace("Client {id} opening", id);
                 using var websocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                logger.LogTrace("Client {id} accepted", id);
                 await websocket.WaitUntilConnected(token);
+                logger.LogTrace("Client {id} fully connected", id);
+                
                 var game = GameBoard.Generate(Definitions.ParseDifficulty(difficulty), new XyPair(x, y));
+                _connections.TryAdd(id, websocket);
+                logger.LogInformation("Client {id} connected with first click at ({x}, {y})", id, x, y);
+                
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var requests = Channel.CreateBounded<IGameRequest>(256);
+                var responses = Channel.CreateBounded<IGameResponse>(256);
 
-                var state = new WebsocketState
+                var tasks = new List<Task>
                 {
-                    Websocket = websocket,
-                    Game = game,
-                    Cts = CancellationTokenSource.CreateLinkedTokenSource(token),
+                    HandleRequests(id, websocket, requests.Writer, cts.Token),
+                    HandleResponses(id, websocket, responses.Reader, cts.Token),
+                    gameService.Play(id, game, requests.Reader, responses.Writer, cts),
                 };
                 
-                _connections.TryAdd(id, state);
+                logger.LogInformation("Client {id} {difficulty} game started", id, difficulty);
+                await Task.WhenAny(tasks);
+                
+                logger.LogInformation("Client {id} game ended", id);
 
-                Task.WaitAll(state.Game.Run(state.Cts.Token),
-                    HandleRequests(state, state.Cts.Token),
-                    HandleResponses(state, state.Cts.Token));
+                await cts.CancelAsync();
+                logger.LogTrace("Client {id} cancelled token", id);
+                
+                await websocket.GracefullyClose(cts.Token);
+                logger.LogInformation("Client {id} gracefully closed", id);
             }
             else
             {
@@ -52,63 +68,66 @@ public class WebsocketController(ILogger<WebsocketController> logger) : Controll
         }
     }
 
-    private async Task HandleRequests(WebsocketState state, CancellationToken token)
+    private async Task HandleRequests(Guid id, WebSocket websocket, ChannelWriter<IGameRequest> channel, CancellationToken token)
     {
-        var channelWriter = state.Game.Requests.Writer;
-
         try
         {
-            while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested &&
+            while (websocket.State == WebSocketState.Open && !_shutdownRequested &&
                    !token.IsCancellationRequested)
             {
-                var message = await state.Websocket.ReceiveMessage(token);
+                var message = await websocket.ReceiveMessage(token);
+                logger.LogInformation("Client {id} request {message}", id, message);
 
                 if (message == "")
                     continue;
 
                 var click = JsonSerializer.Deserialize<GameRequestClick>(message);
+                logger.LogTrace("Client {id} click parsed {click}", id, click);
 
                 if (click is null)
                     continue;
 
-                await channelWriter.WriteAsync(click, token);
+                await channel.WriteAsync(click, token);
+                logger.LogTrace("Client {id} click published", id);
             }
+            
+            logger.LogInformation("Client {id} disconnected, stopping {method}", id, nameof(HandleRequests));
         }
         catch (OperationCanceledException _)
         {
-            Console.WriteLine("Cancellation caught in HandleRequests");
+            logger.LogInformation("Client {id} disconnected due to CancellationToken, stopping {method}", id, nameof(HandleRequests));
         }
     }
     
-    private async Task HandleResponses(WebsocketState state, CancellationToken token)
+    private async Task HandleResponses(Guid id, WebSocket websocket, ChannelReader<IGameResponse> channel, CancellationToken token)
     {
-        var channelReader = state.Game.Responses.Reader;
-
         try
         {
-            while (state.Websocket.State == WebSocketState.Open && !_shutdownRequested &&
+            while (websocket.State == WebSocketState.Open && !_shutdownRequested &&
                    !token.IsCancellationRequested)
             {
-                var response = await channelReader.ReadAsync(token);
+                var response = await channel.ReadAsync(token);
 
                 var task = response switch
                 {
-                    MineResponse res => state.Websocket.SendMessage(res, token),
-                    CellResponse res => state.Websocket.SendMessage(res, token),
-                    FlagResponse res => state.Websocket.SendMessage(res, token),
-                    UnflagResponse res => state.Websocket.SendMessage(res, token),
-                    ProgressResponse res => state.Websocket.SendMessage(res, token),
-                    WinResponse res => state.Websocket.SendMessage(res, token),
-                    LoseResponse res => state.Websocket.SendMessage(res, token),
+                    MineResponse res => websocket.SendMessage(res, token),
+                    CellResponse res => websocket.SendMessage(res, token),
+                    FlagResponse res => websocket.SendMessage(res, token),
+                    UnflagResponse res => websocket.SendMessage(res, token),
+                    ProgressResponse res => websocket.SendMessage(res, token),
+                    WinResponse res => websocket.SendMessage(res, token),
+                    LoseResponse res => websocket.SendMessage(res, token),
                     _ => Task.FromResult(false),
                 };
 
                 await task;
             }
+            
+            logger.LogInformation("Client {id} disconnected, stopping {method}", id, nameof(HandleResponses));
         }
         catch (OperationCanceledException _)
         {
-            Console.WriteLine("Cancellation caught in HandleResponses");
+            logger.LogInformation("Client {id} disconnected due to CancellationToken, stopping {method}", id, nameof(HandleResponses));
         }
         
     }
@@ -118,21 +137,17 @@ public class WebsocketController(ILogger<WebsocketController> logger) : Controll
         _shutdownRequested = true;
         var clients = _connections.ToList();
 
-        foreach (var pair in clients)
+        foreach (var (id, websocket) in clients)
         {
-            var id = pair.Key;
-            var state = pair.Value;
-            
             try
             {
-                await state.Cts.CancelAsync();
-                await state.Websocket.SendMessage("Server shutting down");
-                await state.Websocket.GracefullyClose(CancellationToken.None);
-                Console.WriteLine($"Disconnected {id}");
+                await websocket.SendMessage("Server shutting down");
+                await websocket.GracefullyClose(CancellationToken.None);
+                Console.WriteLine($"Client {id} disconnected");
             }
             catch
             {
-                Console.WriteLine($"Failed to gracefully disconnect {id}");
+                Console.WriteLine($"Client {id} failed to disconnect");
             }
         }
     }
