@@ -83,7 +83,7 @@ public class GameBoard
             yield return new LoseResponse();
             foreach (var mine in Mines.OrderBy(coord.PixelDistance))
             {
-                Thread.Sleep(50);
+                Thread.Sleep(20);
                 yield return new MineResponse { X = mine.X, Y = mine.Y };
             }
 
