@@ -1,5 +1,5 @@
-using Protosweeper.Web.Models;
+using Protosweeper.Core.Models;
 
-namespace Protosweeper.Web.Exceptions;
+namespace Protosweeper.Core.Exceptions;
 
 public class InvalidDifficultyException(Difficulty difficulty) : Exception(Enum.GetName(difficulty));

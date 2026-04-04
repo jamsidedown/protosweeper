@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{631BFA26-F
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protosweeper.Core", "src\Protosweeper.Core\Protosweeper.Core.csproj", "{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,18 @@ Global
 		{94842234-D312-4A88-860A-98D913E81DA7}.Release|x64.Build.0 = Release|Any CPU
 		{94842234-D312-4A88-860A-98D913E81DA7}.Release|x86.ActiveCfg = Release|Any CPU
 		{94842234-D312-4A88-860A-98D913E81DA7}.Release|x86.Build.0 = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|x64.Build.0 = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Debug|x86.Build.0 = Debug|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|x64.ActiveCfg = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|x64.Build.0 = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|x86.ActiveCfg = Release|Any CPU
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,5 +89,6 @@ Global
 		{904B1B20-A580-4B59-90EF-FA9ABCFF8CBC} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{80ECA810-C92B-4D87-96EE-A03F43FE3BDC} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 		{94842234-D312-4A88-860A-98D913E81DA7} = {F8E0E928-6A19-4276-9737-1BFF85B47607}
+		{4C265CD4-76E8-45D3-8C08-63AE9E0A41A4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

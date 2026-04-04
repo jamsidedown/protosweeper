@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
-public record UnflagResponse : GameResponseBase
+public record FlagResponse : GameResponseBase
 {
     [JsonPropertyName("type")]
-    public override string Type => "unflag";
+    public override string Type => "flag";
     
     [JsonPropertyName("x")]
     public int X { get; set; }

@@ -3,8 +3,9 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Mvc;
-using Protosweeper.Web.Extensions;
-using Protosweeper.Web.Models;
+using Protosweeper.Core;
+using Protosweeper.Core.Extensions;
+using Protosweeper.Core.Models;
 using Protosweeper.Web.Services;
 
 namespace Protosweeper.Web.Controllers;
@@ -15,8 +16,33 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
 {
     private static readonly ConcurrentDictionary<Guid, WebsocketState> Connections = new();
     private static bool _shutdownRequested = false;
+
+    [Route("{gameId:guid}")]
+    public async Task Get(Guid gameId, CancellationToken token)
+    {
+        var clientId = Guid.CreateVersion7();
+        
+        try
+        {
+            if (HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                
+            }
+            else
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        }
+        catch (OperationCanceledException _) {}
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        
+        Connections.TryRemove(clientId, out _);
+    }
     
-    public async Task Get(string difficulty, int x, int y, CancellationToken token)
+    public async Task OldGet(string difficulty, int x, int y, CancellationToken token)
     {
         var id = Guid.NewGuid();
 
