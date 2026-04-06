@@ -138,6 +138,7 @@ public class GameBoard
         if (Won())
         {
             yield return new WinResponse();
+            yield return new ProgressResponse { Flagged = $"{Mines.Count} / {Mines.Count}" };
             yield break;
         }
         

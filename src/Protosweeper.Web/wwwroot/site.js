@@ -130,6 +130,11 @@ function clickCell(cellId) {
             console.log(websocketUrl);
             connect(websocketUrl);
             gameStarted = true;
+            
+            const gameIdParagraph = document.getElementById("gameId");
+            gameIdParagraph.innerHTML = `Game ID: <code>${data.id}</code>`
+            gameIdParagraph.hidden = false;
+            
             return;
         }
         

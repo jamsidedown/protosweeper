@@ -6,6 +6,10 @@ body {
     text-align: center;
 }
 
+.small {
+    font-size: 0.75em;
+}
+
 h1 {
     text-shadow: 0 0 3px rgba(50, 205, 50, 0.75), 0 0 6px rgba(50, 205, 50, 0.75);
 }
