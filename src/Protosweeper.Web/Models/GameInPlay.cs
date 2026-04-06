@@ -7,8 +7,8 @@ namespace Protosweeper.Web.Models;
 public class GameInPlay
 {
     public required GameBoard GameBoard { get; init; }
-    public CancellationTokenSource CancellationTokenSource { get; init; }
-    public Task GameRunner { get; set; }
+    public required CancellationTokenSource CancellationTokenSource { get; init; }
+    public Task? GameRunner { get; set; }
     public Channel<IGameRequest> RequestChannel { get; } = Channel.CreateBounded<IGameRequest>(256);
     public ConcurrentDictionary<Guid, ChannelWriter<IGameResponse>> ResponseChannelWriters { get; } = [];
 }

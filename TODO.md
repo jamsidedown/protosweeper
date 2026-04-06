@@ -1,10 +1,5 @@
 # Todo
 
-- Make each game deterministic based on the guid as a seed
-  - Store first click as part of the id shown to the user?
-    - Crockford encoding?
-  - Should be able to practice games based on a specific seed
-  - Need to move away from Linq's `Shuffle` method as it uses `Random.Shared` under the hood
 - Write solver (in private git submodule?)
 - Ensure game is solvable before returning the id to the user
   - Use solver submodule/service with a potential seed to check it can be solved programmatically

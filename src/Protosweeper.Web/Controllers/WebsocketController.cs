@@ -18,10 +18,11 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
     private static readonly ConcurrentDictionary<Guid, WebsocketState> Connections = new();
     private static bool _shutdownRequested = false;
 
-    [Route("{gameId:guid}")]
-    public async Task Get(Guid gameId, CancellationToken token)
+    [Route("{id}")]
+    public async Task Get(string id, CancellationToken token)
     {
         var clientId = Guid.CreateVersion7();
+        var gameId = GameId.Parse(id);
         
         try
         {
@@ -75,7 +76,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 Response.StatusCode = StatusCodes.Status400BadRequest;
             }
         }
-        catch (OperationCanceledException _) {}
+        catch (OperationCanceledException) {}
         catch (Exception e)
         {
             Console.WriteLine(e);
@@ -130,7 +131,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
             
             logger.LogInformation("Client {id} disconnected, stopping {method}", id, nameof(HandleRequests));
         }
-        catch (OperationCanceledException _)
+        catch (OperationCanceledException)
         {
             logger.LogInformation("Client {id} disconnected due to CancellationToken, stopping {method}", id, nameof(HandleRequests));
         }
@@ -150,7 +151,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
             
             logger.LogInformation("Client {id} disconnected, stopping {method}", clientId, nameof(HandleResponses));
         }
-        catch (OperationCanceledException _)
+        catch (OperationCanceledException)
         {
             logger.LogInformation("Client {id} disconnected due to CancellationToken, stopping {method}", clientId, nameof(HandleResponses));
         }
@@ -186,7 +187,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 await cts.CancelAsync();
                 Console.WriteLine($"Client {id} cancelled token");
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 Console.WriteLine($"Client {id} failed to cancel token");
             }

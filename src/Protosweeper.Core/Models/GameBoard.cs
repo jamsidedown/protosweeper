@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using Protosweeper.Core.Extensions;
 
 namespace Protosweeper.Core.Models;
 
@@ -17,7 +18,7 @@ public class GameBoard
     public DateTime LastEvent { get; private set; }
     public SemaphoreSlim Semaphore { get; } = new(1, 1);
 
-    public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
+    public static GameBoard Generate(Guid seed, Difficulty difficulty, XyPair initialClick)
     {
         var dimensions = Definitions.GetDimensions(difficulty);
         var mineCount = Definitions.GetMineCount(difficulty);
@@ -28,7 +29,9 @@ public class GameBoard
 
         var safe = GetNeighbours(dimensions, initialClick);
 
-        var mines = coords.Except(safe).Shuffle().Take(mineCount).ToHashSet();
+        var nonSafe = coords.Except(safe).ToArray();
+        Random.CreateSeeded(seed).Shuffle(nonSafe);
+        var mines = nonSafe.Take(mineCount).ToHashSet();
         var clear = coords.Except(mines).ToHashSet();
 
         return new GameBoard

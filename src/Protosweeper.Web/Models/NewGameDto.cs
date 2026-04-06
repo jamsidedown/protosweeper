@@ -5,8 +5,8 @@ namespace Protosweeper.Web.Models;
 public class NewGameDto
 {
     [JsonPropertyName("id")]
-    public Guid Id { get; set; }
+    public required string Id { get; set; }
     
     [JsonPropertyName("difficulty")]
-    public string Difficulty { get; set; }
+    public required string Difficulty { get; set; }
 }

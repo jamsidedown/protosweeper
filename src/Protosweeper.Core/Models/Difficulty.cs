@@ -1,6 +1,6 @@
 namespace Protosweeper.Core.Models;
 
-public enum Difficulty
+public enum Difficulty : byte
 {
     Beginner,
     Intermediate,

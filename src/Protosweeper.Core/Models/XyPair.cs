@@ -1,5 +1,8 @@
+using System.Runtime.InteropServices;
+
 namespace Protosweeper.Core.Models;
 
+[StructLayout(LayoutKind.Sequential)]
 public readonly struct XyPair(int x, int y) : IEquatable<XyPair>
 {
     public readonly int X = x;
