@@ -37,7 +37,7 @@ public class GameService(ILogger<GameService> logger)
             
             logger.LogTrace("Game {id} received initial click {initialClick}", gameId, initialClick);
             
-            foreach (var response in gameBoard.Click(initialClick))
+            await foreach (var response in gameBoard.Click(initialClick, token))
             foreach (var sender in game.ResponseChannelWriters.Values.ToList())
             {
                 try
@@ -55,27 +55,24 @@ public class GameService(ILogger<GameService> logger)
             await foreach (var request in receiver.ReadAllAsync(token))
             {
                 logger.LogTrace("Game {id} received request {request}", gameId, request);
-                
-                var responses = request switch
-                {
-                    GameRequestClick click => gameBoard.Click(click),
-                    _ => [],
-                };
 
-                foreach (var response in responses)
-                foreach (var sender in game.ResponseChannelWriters.Values.ToList())
+                if (request is GameRequestClick click)
                 {
-                    try
+                    await foreach (var response in gameBoard.Click(click, token))
+                    foreach (var sender in game.ResponseChannelWriters.Values.ToList())
                     {
-                        await sender.WriteAsync(response, token);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.LogWarning("{}", e.Message);
-                    }
+                        try
+                        {
+                            await sender.WriteAsync(response, token);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogWarning("{}", e.Message);
+                        }
 
-                    if (response is WinResponse or LoseResponse)
-                        gameBoard.ReadOnly = true;
+                        if (response is WinResponse or LoseResponse)
+                            gameBoard.ReadOnly = true;
+                    }
                 }
                 
                 logger.LogTrace("Game {id} handled request", gameId);

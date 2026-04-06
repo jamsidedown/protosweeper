@@ -5,9 +5,9 @@ namespace Protosweeper.Core;
 
 public static class Definitions
 {
-    private static readonly XyPair BeginnerDimensions = new((int)9, (int)9);
-    private static readonly XyPair IntermediateDimensions = new((int)16, (int)16);
-    private static readonly XyPair ExpertDimensions = new((int)30, (int)16);
+    private static readonly XyPair BeginnerDimensions = new(9, 9);
+    private static readonly XyPair IntermediateDimensions = new(16, 16);
+    private static readonly XyPair ExpertDimensions = new(30, 16);
 
     public static XyPair GetDimensions(Difficulty difficulty) =>
         difficulty switch

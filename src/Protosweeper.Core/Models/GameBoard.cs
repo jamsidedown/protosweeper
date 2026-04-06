@@ -15,6 +15,7 @@ public class GameBoard
     public bool ReadOnly = false;
     public ConcurrentBag<IGameEvent> Events { get; private set; }
     public DateTime LastEvent { get; private set; }
+    public SemaphoreSlim Semaphore { get; } = new(1, 1);
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
@@ -42,55 +43,64 @@ public class GameBoard
         };
     }
 
-    public IEnumerable<IGameResponse> Click(GameRequestClick click)
+    public async IAsyncEnumerable<IGameResponse> Click(GameRequestClick click, CancellationToken token)
     {
         if (ReadOnly)
             yield break;
-        
-        Events.Add(click);
-        LastEvent = DateTime.Now;
-        
-        var x = click.X;
-        var y = click.Y;
-        var coord = new XyPair(x, y);
 
-        if (click.Button.ToLower() == "left")
+        await Semaphore.WaitAsync(token);
+
+        try
         {
-            if (Flagged.Contains(coord))
-                yield break;
+            Events.Add(click);
+            LastEvent = DateTime.Now;
+        
+            var x = click.X;
+            var y = click.Y;
+            var coord = new XyPair(x, y);
 
-            foreach (var response in Reveal(x, y))
+            if (click.Button.ToLower() == "left")
             {
-                Events.Add(response);
-                yield return response;
+                if (Flagged.Contains(coord))
+                    yield break;
+
+                foreach (var response in Reveal(x, y))
+                {
+                    Events.Add(response);
+                    yield return response;
+                }
+            }
+            else if (click.Button.ToLower() == "right")
+            {
+                if (!Flagged.Contains(coord) && !Cleared.Contains(coord))
+                {
+                    Flagged.Add(coord);
+                
+                    var flagResponse = new FlagResponse { X = x, Y = y };
+                    Events.Add(flagResponse);
+                    yield return flagResponse;
+                    
+                    var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                    Events.Add(progressResponse);
+                    yield return progressResponse;
+                }
+                else if (Flagged.Contains(coord))
+                {
+                    Flagged.Remove(coord);
+                
+                    var unflagResponse = new UnflagResponse { X = x, Y = y };
+                    Events.Add(unflagResponse);
+                    yield return unflagResponse;
+                
+                    var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                    Events.Add(progressResponse);
+                    yield return progressResponse;
+                }
             }
         }
-        else if (click.Button.ToLower() == "right")
+        finally
         {
-            if (!Flagged.Contains(coord) && !Cleared.Contains(coord))
-            {
-                Flagged.Add(coord);
-                
-                var flagResponse = new FlagResponse { X = x, Y = y };
-                Events.Add(flagResponse);
-                yield return flagResponse;
-                    
-                var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
-                Events.Add(progressResponse);
-                yield return progressResponse;
-            }
-            else if (Flagged.Contains(coord))
-            {
-                Flagged.Remove(coord);
-                
-                var unflagResponse = new UnflagResponse { X = x, Y = y };
-                Events.Add(unflagResponse);
-                yield return unflagResponse;
-                
-                var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
-                Events.Add(progressResponse);
-                yield return progressResponse;
-            }
+            Semaphore.Release();
         }
     }
 
