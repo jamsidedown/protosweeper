@@ -23,7 +23,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
     {
         var clientId = Guid.CreateVersion7();
         var gameId = GameId.Parse(id);
-        
+
         try
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
@@ -33,7 +33,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 logger.LogTrace("Client {clientId} accepted", clientId);
                 await websocket.WaitUntilConnected(token);
                 logger.LogTrace("Client {clientId} fully connected", clientId);
-                
+
                 logger.LogTrace("Getting game {gameId} for client {clientId}", gameId, clientId);
                 var (success, game) = gameService.Get(gameId);
                 if (!success || game is null)
@@ -42,9 +42,10 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                     Response.StatusCode = StatusCodes.Status404NotFound;
                     return;
                 }
+
                 logger.LogTrace("Successfully got game {gameId} for client {clientId}", gameId, clientId);
 
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(token, game.CancellationTokenSource.Token);
                 var state = new WebsocketState { Websocket = websocket, Cts = cts };
                 Connections.TryAdd(clientId, state);
                 logger.LogInformation("Client {clientId} connected to game {gameId}", clientId, gameId);
@@ -58,7 +59,7 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                     HandleRequests(clientId, websocket, requestsWriter, cts.Token),
                     HandleResponses(clientId, websocket, responses.Reader, cts.Token),
                 };
-                
+
                 await ReplayGame(game.GameBoard, websocket, responses.Writer, cts.Token);
                 logger.LogInformation("Replayed game {gameId} for client {clientId}", gameId, clientId);
 
@@ -76,9 +77,13 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
                 Response.StatusCode = StatusCodes.Status400BadRequest;
             }
         }
-        catch (OperationCanceledException) {}
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Less shit");
+        }
         catch (Exception e)
         {
+            Console.WriteLine("Oh shit");
             Console.WriteLine(e);
         }
         

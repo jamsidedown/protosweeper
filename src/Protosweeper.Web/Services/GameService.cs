@@ -63,19 +63,29 @@ public class GameService(ILogger<GameService> logger)
                 if (request is GameRequestClick click)
                 {
                     await foreach (var response in gameBoard.Click(click, token))
-                    foreach (var sender in game.ResponseChannelWriters.Values.ToList())
                     {
-                        try
+                        foreach (var sender in game.ResponseChannelWriters.Values.ToList())
                         {
-                            await sender.WriteAsync(response, token);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.LogWarning("{}", e.Message);
+                            try
+                            {
+                                await sender.WriteAsync(response, token);
+                            }
+                            catch (Exception e)
+                            {
+                                logger.LogWarning("{}", e.Message);
+                            }
                         }
 
                         if (response is WinResponse or LoseResponse)
+                        {
                             gameBoard.ReadOnly = true;
+                            game.RequestChannel.Writer.Complete();
+                        }
+                    }
+
+                    if (gameBoard.ReadOnly)
+                    {
+                        await KillGame(game);
                     }
                 }
                 
@@ -97,9 +107,19 @@ public class GameService(ILogger<GameService> logger)
             if (game.ResponseChannelWriters.IsEmpty)
             {
                 await game.CancellationTokenSource.CancelAsync();
-                game.RequestChannel.Writer.Complete();
+                game.RequestChannel.Writer.TryComplete();
                 Games.TryRemove(gameId.ToString(), out _);
             }
+        }
+    }
+
+    private async Task KillGame(GameInPlay game)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
+        foreach (var channelWriter in game.ResponseChannelWriters.Values.ToList())
+        {
+            channelWriter.TryComplete();
         }
     }
 }

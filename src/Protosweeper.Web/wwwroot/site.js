@@ -131,9 +131,13 @@ function clickCell(cellId) {
             connect(websocketUrl);
             gameStarted = true;
             
-            const gameIdParagraph = document.getElementById("gameId");
-            gameIdParagraph.innerHTML = `Game ID: <code>${data.id}</code>`
-            gameIdParagraph.hidden = false;
+            // const gameIdParagraph = document.getElementById("gameId");
+            // gameIdParagraph.innerHTML = `Game ID: <code>${data.id}</code>`;
+            // gameIdParagraph.hidden = false;
+            
+            const gameUrlParagraph = document.getElementById("gameUrl");
+            gameUrlParagraph.innerHTML = `Game URL: <code>${wsUrl}/${data.id}</code>`;
+            gameUrlParagraph.hidden = false;
             
             return;
         }
