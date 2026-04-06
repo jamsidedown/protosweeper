@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace Protosweeper.Core.Models;
@@ -12,7 +13,8 @@ public class GameBoard
     public XyPair InitialClick { get; private set; }
     public XyPair Dimensions { get; private set; }
     public bool ReadOnly = false;
-    public List<IGameEvent> Events { get; private set; }
+    public ConcurrentBag<IGameEvent> Events { get; private set; }
+    public DateTime LastEvent { get; private set; }
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
@@ -36,6 +38,7 @@ public class GameBoard
             Mines = mines,
             Clear = clear,
             Events = [new GameRequestClick { Button = "left", X = initialClick.X, Y = initialClick.Y }],
+            LastEvent = DateTime.Now,
         };
     }
 
@@ -45,6 +48,7 @@ public class GameBoard
             yield break;
         
         Events.Add(click);
+        LastEvent = DateTime.Now;
         
         var x = click.X;
         var y = click.Y;
@@ -88,6 +92,13 @@ public class GameBoard
                 yield return progressResponse;
             }
         }
+    }
+
+    public IEnumerable<IGameResponse> ReplayResponses()
+    {
+        return Events.Where(e => e is IGameResponse)
+            .OrderBy(e => e.Timestamp)
+            .Cast<IGameResponse>();
     }
 
     private IEnumerable<IGameResponse> Reveal(int x, int y)

@@ -7,6 +7,7 @@ namespace Protosweeper.Web.Pages;
 public class MinesModel : PageModel
 {
     public string Difficulty = "Beginner";
+    public string RestUrl = "http://localhost:5171/game/new";
     public string WsUrl = "ws://localhost:5171/ws";
 
     public int Height = 0;
