@@ -7,6 +7,7 @@ builder.WebHost.UseKestrel(option => option.AddServerHeader = false);
 builder.Services.AddGrpc();
 builder.Services.AddRazorPages();
 builder.Services.AddLogging();
+builder.Services.AddAntiforgery();
 
 builder.Services.AddTransient<GameService>();
 

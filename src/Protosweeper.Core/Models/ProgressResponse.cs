@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
 public record ProgressResponse : GameResponseBase
 {

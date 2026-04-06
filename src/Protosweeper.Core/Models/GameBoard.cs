@@ -1,8 +1,7 @@
+using System.Collections.Concurrent;
 using System.Text;
-using System.Text.Json;
-using System.Threading.Channels;
 
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
 public class GameBoard
 {
@@ -14,6 +13,8 @@ public class GameBoard
     public XyPair InitialClick { get; private set; }
     public XyPair Dimensions { get; private set; }
     public bool ReadOnly = false;
+    public ConcurrentBag<IGameEvent> Events { get; private set; }
+    public DateTime LastEvent { get; private set; }
 
     public static GameBoard Generate(Difficulty difficulty, XyPair initialClick)
     {
@@ -36,6 +37,8 @@ public class GameBoard
             InitialClick = initialClick,
             Mines = mines,
             Clear = clear,
+            Events = [new GameRequestClick { Button = "left", X = initialClick.X, Y = initialClick.Y }],
+            LastEvent = DateTime.Now,
         };
     }
 
@@ -43,6 +46,9 @@ public class GameBoard
     {
         if (ReadOnly)
             yield break;
+        
+        Events.Add(click);
+        LastEvent = DateTime.Now;
         
         var x = click.X;
         var y = click.Y;
@@ -52,25 +58,47 @@ public class GameBoard
         {
             if (Flagged.Contains(coord))
                 yield break;
-            
+
             foreach (var response in Reveal(x, y))
+            {
+                Events.Add(response);
                 yield return response;
+            }
         }
         else if (click.Button.ToLower() == "right")
         {
             if (!Flagged.Contains(coord) && !Cleared.Contains(coord))
             {
                 Flagged.Add(coord);
-                yield return new FlagResponse { X = x, Y = y };
-                yield return new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                
+                var flagResponse = new FlagResponse { X = x, Y = y };
+                Events.Add(flagResponse);
+                yield return flagResponse;
+                    
+                var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                Events.Add(progressResponse);
+                yield return progressResponse;
             }
             else if (Flagged.Contains(coord))
             {
                 Flagged.Remove(coord);
-                yield return new UnflagResponse { X = x, Y = y };
-                yield return new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                
+                var unflagResponse = new UnflagResponse { X = x, Y = y };
+                Events.Add(unflagResponse);
+                yield return unflagResponse;
+                
+                var progressResponse = new ProgressResponse { Flagged = $"{Flagged.Count} / {Mines.Count}" };
+                Events.Add(progressResponse);
+                yield return progressResponse;
             }
         }
+    }
+
+    public IEnumerable<IGameResponse> ReplayResponses()
+    {
+        return Events.Where(e => e is IGameResponse)
+            .OrderBy(e => e.Timestamp)
+            .Cast<IGameResponse>();
     }
 
     private IEnumerable<IGameResponse> Reveal(int x, int y)

@@ -15,4 +15,8 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Protosweeper.Core\Protosweeper.Core.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
 public enum Cell
 {

@@ -29,10 +29,11 @@
 
 </div>
 <p id="progress" hidden="hidden"></p>
+@Html.AntiForgeryToken()
 
 <script src="site.js"></script>
 <script type="text/javascript">
     window.onload = () => {
-        initialise("@Model.WsUrl", "@Model.Difficulty");
+        initialise("@Model.RestUrl", "@Model.WsUrl", "@Model.Difficulty");
     };
 </script>

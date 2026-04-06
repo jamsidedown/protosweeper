@@ -1,4 +1,5 @@
-let url;
+let restUrl;
+let wsUrl;
 let difficulty;
 let websocket;
 let gameStarted = false;
@@ -92,8 +93,7 @@ function connect(url) {
 const cellPattern = /cell-(\d+)-(\d+)/;
 
 function clickCell(cellId) {
-    const cell = document.getElementById(cellId);
-    return (event) => {
+    return async (event) => {
         console.log(event);
         console.log(cellId);
         
@@ -106,9 +106,29 @@ function clickCell(cellId) {
         const y = parseInt(groups[2]);
         
         if (!gameStarted) {
-            const wsUrl = `${url}?difficulty=${difficulty}&x=${x}&y=${y}`;
-            console.log(wsUrl);
-            connect(wsUrl);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            
+            const postUrl = `${restUrl}?difficulty=${difficulty}&x=${x}&y=${y}`;
+            console.log(`POST url: ${postUrl}`);
+            const response = await fetch(postUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": token,
+                },
+                body: "{}",
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(data);
+            
+            const websocketUrl = `${wsUrl}/${data.id}`;
+            console.log(websocketUrl);
+            connect(websocketUrl);
             gameStarted = true;
             return;
         }
@@ -131,9 +151,10 @@ function clickCell(cellId) {
     
 }
 
-function initialise(_url, _difficulty) {
+function initialise(_restUrl, _wsUrl, _difficulty) {
     difficulty = _difficulty;
-    url = _url;
+    restUrl = _restUrl;
+    wsUrl = _wsUrl;
     
     const cells = document.getElementsByClassName("cell");
     for (const cell of cells) {

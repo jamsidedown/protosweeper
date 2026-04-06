@@ -1,14 +1,11 @@
 using System.Text.Json.Serialization;
 
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
-public record CellResponse : GameResponseBase
+public record MineResponse : GameResponseBase
 {
     [JsonPropertyName("type")]
-    public override string Type => "cell";
-    
-    [JsonPropertyName("count")]
-    public int Count { get; set; }
+    public override string Type => "mine";
     
     [JsonPropertyName("x")]
     public int X { get; set; }

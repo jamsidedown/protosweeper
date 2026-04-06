@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace Protosweeper.Web.Models;
+namespace Protosweeper.Core.Models;
 
 public class WebsocketState
 {
