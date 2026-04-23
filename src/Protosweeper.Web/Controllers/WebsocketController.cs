@@ -18,11 +18,10 @@ public class WebsocketController(ILogger<WebsocketController> logger, GameServic
     private static readonly ConcurrentDictionary<Guid, WebsocketState> Connections = new();
     private static bool _shutdownRequested = false;
 
-    [Route("{id}")]
-    public async Task Get(string id, CancellationToken token)
+    [Route("{gameId:guid}")]
+    public async Task Get(Guid gameId, CancellationToken token)
     {
         var clientId = Guid.CreateVersion7();
-        var gameId = GameId.Parse(id);
 
         try
         {

@@ -1,20 +1,21 @@
 using System.Collections.Concurrent;
 using System.Text;
+using System.Xml.XPath;
 using Protosweeper.Core.Extensions;
 
 namespace Protosweeper.Core.Models;
 
 public class GameBoard
 {
-    public HashSet<XyPair> Mines { get; private set; }
-    public HashSet<XyPair> Clear { get; private set; }
+    public required HashSet<XyPair> Mines { get; init; }
+    public required HashSet<XyPair> Clear { get; init; }
     public HashSet<XyPair> Flagged { get; private set; } = [];
     public HashSet<XyPair> Cleared { get; private set; } = [];
-    public int[,] Cells { get; private set; } = new int[0, 0];
-    public XyPair InitialClick { get; private set; }
-    public XyPair Dimensions { get; private set; }
+    public int[,] Cells { get; init; } = new int[0, 0];
+    public XyPair InitialClick { get; private init; }
+    public XyPair Dimensions { get; private init; }
     public bool ReadOnly = false;
-    public ConcurrentBag<IGameEvent> Events { get; private set; }
+    public required ConcurrentBag<IGameEvent> Events { get; init; }
     public DateTime LastEvent { get; private set; }
     public SemaphoreSlim Semaphore { get; } = new(1, 1);
 
@@ -61,6 +62,9 @@ public class GameBoard
             var x = click.X;
             var y = click.Y;
             var coord = new XyPair(x, y);
+
+            if (coord.X < 0 || coord.X >= Dimensions.X || coord.Y < 0 || coord.Y >= Dimensions.Y)
+                yield break;
 
             if (click.Button.ToLower() == "left")
             {

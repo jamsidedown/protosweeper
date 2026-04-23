@@ -1,6 +1,6 @@
 # Todo
 
-- Write solver (in private git submodule?)
+- Write solver (in private repo)
 - Ensure game is solvable before returning the id to the user
   - Use solver submodule/service with a potential seed to check it can be solved programmatically
 - Add background job to automatically clean up games with no clients every 10 minutes or so

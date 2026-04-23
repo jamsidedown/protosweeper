@@ -18,5 +18,32 @@ public readonly struct XyPair(int x, int y) : IEquatable<XyPair>
     public bool Equals(XyPair other) => X == other.X && Y == other.Y;
     public override bool Equals(object? obj) => obj is XyPair other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(X, Y);
+    public override string ToString() => $"({X}, {Y})";
 
+    public List<XyPair> Neighbours(XyPair bounds)
+    {
+        var neighbours = new List<XyPair>();
+
+        for (var dx = -1; dx <= 1; dx++)
+        {
+            var x = X + dx;
+            for (var dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0)
+                    continue;
+                
+                var y = Y + dy;
+                
+                if (x < 0 || y < 0)
+                    continue;
+                
+                if (x >= bounds.X || y >= bounds.Y)
+                    continue;
+                
+                neighbours.Add(new XyPair(x, y));
+            }
+        }
+
+        return neighbours;
+    }
 }

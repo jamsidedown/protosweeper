@@ -1,36 +1,54 @@
 using System.Collections.Concurrent;
 using Protosweeper.Core.Models;
+using Protosweeper.Web.Data;
 using Protosweeper.Web.Models;
 
 namespace Protosweeper.Web.Services;
 
-public class GameService(ILogger<GameService> logger)
+public class GameService(GameRepository repo, ILogger<GameService> logger)
 {
-    private static ConcurrentDictionary<string, GameInPlay> Games = [];
+    private static ConcurrentDictionary<Guid, GameInPlay> Games = [];
 
-    public GameId New(Difficulty difficulty, int initialX, int initialY, Guid? optionalSeed = null)
+    public async Task<Guid> New(Difficulty difficulty, int initialX, int initialY, CancellationToken token = default)
     {
         var initialClick = new XyPair(initialX, initialY);
-        // var seed = optionalSeed ?? Guid.CreateVersion7();
-        var seed = optionalSeed ?? Guid.Parse("019d6342-7c29-79fd-a79a-ab3d7e785d0e");
+
+        var gameId = Guid.CreateVersion7();
+        var seedId =  Guid.CreateVersion7();
+        var seed = Guid.NewGuid();
+        // var seed = Guid.Parse("019d6342-7c29-79fd-a79a-ab3d7e785d0e");
         var gameBoard = GameBoard.Generate(seed, difficulty, initialClick);
         
+        var gameEntity = new GameEntity
+        {
+            Id = seedId,
+            Seed = seed,
+            Difficulty = difficulty,
+            InitialX = initialX,
+            InitialY = initialY,
+        };
+        await repo.Create(gameEntity, token);
+        
         var cts = new CancellationTokenSource();
-        var game = new GameInPlay { GameBoard = gameBoard, CancellationTokenSource = cts };
+        var game = new GameInPlay
+        {
+            GameId = gameId,
+            GameBoard = gameBoard,
+            GameEntity = gameEntity,
+            CancellationTokenSource = cts,
+        };
 
-        var id = new GameId(seed, difficulty, initialX, initialY);
+        game.GameRunner = Play(gameEntity, game, cts.Token);
 
-        game.GameRunner = Play(id, game, cts.Token);
-
-        return Games.TryAdd(id.ToString(), game) ? id : throw new Exception("Unable to create game");
+        return Games.TryAdd(gameId, game) ? gameId : throw new Exception("Unable to create game");
     }
 
-    public (bool, GameInPlay?) Get(GameId id)
+    public (bool, GameInPlay?) Get(Guid gameId)
     {
-        return Games.TryGetValue(id.ToString(), out var game) ? (true, game) : (false, null);
+        return Games.TryGetValue(gameId, out var game) ? (true, game) : (false, null);
     }
     
-    public async Task Play(GameId gameId, GameInPlay game, CancellationToken token)
+    public async Task Play(GameEntity gameEntity, GameInPlay game, CancellationToken token)
     {
         var gameBoard = game.GameBoard;
         var receiver = game.RequestChannel.Reader;
@@ -39,7 +57,7 @@ public class GameService(ILogger<GameService> logger)
         {
             var initialClick = new GameRequestClick { Button = "left", X = gameBoard.InitialClick.X, Y = gameBoard.InitialClick.Y };
             
-            logger.LogTrace("Game {id} received initial click {initialClick}", gameId, initialClick);
+            logger.LogTrace("Game {id} received initial click {initialClick}", gameEntity, initialClick);
             
             await foreach (var response in gameBoard.Click(initialClick, token))
             foreach (var sender in game.ResponseChannelWriters.Values.ToList())
@@ -54,11 +72,11 @@ public class GameService(ILogger<GameService> logger)
                 }
             }
             
-            logger.LogTrace("Game {id} handled initial click", gameId);
+            logger.LogTrace("Game {id} handled initial click", gameEntity);
             
             await foreach (var request in receiver.ReadAllAsync(token))
             {
-                logger.LogTrace("Game {id} received request {request}", gameId, request);
+                logger.LogTrace("Game {id} received request {request}", gameEntity, request);
 
                 if (request is GameRequestClick click)
                 {
@@ -89,18 +107,18 @@ public class GameService(ILogger<GameService> logger)
                     }
                 }
                 
-                logger.LogTrace("Game {id} handled request", gameId);
+                logger.LogTrace("Game {id} handled request", gameEntity);
             }
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("Game {id} ended due to CancellationToken, stopping {method}", gameId, nameof(Play));
+            logger.LogInformation("Game {id} ended due to CancellationToken, stopping {method}", gameEntity, nameof(Play));
         }
     }
 
-    public async Task Cleanup(Guid clientId, GameId gameId)
+    public async Task Cleanup(Guid clientId, Guid gameId)
     {
-        if (Games.TryGetValue(gameId.ToString(), out var game))
+        if (Games.TryGetValue(gameId, out var game))
         {
             game.ResponseChannelWriters.TryRemove(clientId, out _);
 
@@ -108,7 +126,7 @@ public class GameService(ILogger<GameService> logger)
             {
                 await game.CancellationTokenSource.CancelAsync();
                 game.RequestChannel.Writer.TryComplete();
-                Games.TryRemove(gameId.ToString(), out _);
+                Games.TryRemove(gameId, out _);
             }
         }
     }

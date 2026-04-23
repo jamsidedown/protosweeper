@@ -1,7 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using Protosweeper.Web.Controllers;
+using Protosweeper.Web.Data;
 using Protosweeper.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<GameDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.WebHost.UseKestrel(option => option.AddServerHeader = false);
 builder.Services.AddGrpc();
@@ -10,6 +15,7 @@ builder.Services.AddLogging();
 builder.Services.AddAntiforgery();
 
 builder.Services.AddTransient<GameService>();
+builder.Services.AddTransient<GameRepository>();
 
 var app = builder.Build();
 

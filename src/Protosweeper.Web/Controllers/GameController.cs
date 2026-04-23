@@ -13,11 +13,11 @@ public class GameController(GameService gameService, ILogger<GameController> log
     [ValidateAntiForgeryToken]
     [Route("new")]
     [HttpPost]
-    public NewGameDto? New(string difficulty, int x, int y)
+    public async Task<NewGameDto?> New(string difficulty, int x, int y)
     {
         try
         {
-            var gameId = gameService.New(Definitions.ParseDifficulty(difficulty), x, y);
+            var gameId = await gameService.New(Definitions.ParseDifficulty(difficulty), x, y);
             return new NewGameDto
             {
                 Id = gameId.ToString(),
