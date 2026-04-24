@@ -68,7 +68,7 @@ public class GameBoard
 
             if (click.Button.ToLower() == "left")
             {
-                if (Flagged.Contains(coord))
+                if (Flagged.Contains(coord) || Cleared.Contains(coord))
                     yield break;
 
                 foreach (var response in Reveal(x, y))
