@@ -68,7 +68,10 @@ public class GameBoard
 
             if (click.Button.ToLower() == "left")
             {
-                if (Flagged.Contains(coord) || Cleared.Contains(coord))
+                if (Flagged.Contains(coord))
+                    yield break;
+                
+                if (Cleared.TryGetValue(coord, out var pair) && Cells[pair.X, pair.Y] == 0)
                     yield break;
 
                 foreach (var response in Reveal(x, y))
