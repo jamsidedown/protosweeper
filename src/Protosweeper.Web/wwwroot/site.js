@@ -63,15 +63,31 @@ function connect(url) {
             progress.innerText = flagged;
             progress.hidden = false;
         } else if (data.type === "win") {
+            ended = true;
+            
             const result = document.getElementById("result");
             result.innerText = "You win!";
             result.hidden = false;
-            ended = true;
+
+            const gameIdParagraph = document.getElementById("gameId");
+            gameIdParagraph.innerHTML = `Your seed was: <code>${data.seed}</code>`;
+            gameIdParagraph.hidden = false;
+
+            const gameUrlParagraph = document.getElementById("gameUrl");
+            gameUrlParagraph.hidden = true;
         } else if (data.type === "lose") {
+            ended = true;
+            
             const result = document.getElementById("result");
             result.innerText = "You lose!";
             result.hidden = false;
-            ended = true;
+
+            const gameIdParagraph = document.getElementById("gameId");
+            gameIdParagraph.innerHTML = `Your seed was: <code>${data.seed}</code>`;
+            gameIdParagraph.hidden = false;
+
+            const gameUrlParagraph = document.getElementById("gameUrl");
+            gameUrlParagraph.hidden = true;
         }
     }
 
@@ -130,10 +146,6 @@ function clickCell(cellId) {
             console.log(websocketUrl);
             connect(websocketUrl);
             gameStarted = true;
-            
-            // const gameIdParagraph = document.getElementById("gameId");
-            // gameIdParagraph.innerHTML = `Game ID: <code>${data.id}</code>`;
-            // gameIdParagraph.hidden = false;
             
             const gameUrlParagraph = document.getElementById("gameUrl");
             gameUrlParagraph.innerHTML = `Game URL: <code>${wsUrl}/${data.id}</code>`;

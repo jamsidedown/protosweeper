@@ -17,7 +17,7 @@ public class GameService(GameRepository repo, ILogger<GameService> logger)
         var seedId =  Guid.CreateVersion7();
         var seed = Guid.NewGuid();
         // var seed = Guid.Parse("019d6342-7c29-79fd-a79a-ab3d7e785d0e");
-        var gameBoard = GameBoard.Generate(seed, difficulty, initialClick);
+        var gameBoard = GameBoard.Generate(seedId, seed, difficulty, initialClick);
         
         var gameEntity = new GameEntity
         {

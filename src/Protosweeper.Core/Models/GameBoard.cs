@@ -18,8 +18,9 @@ public class GameBoard
     public required ConcurrentBag<IGameEvent> Events { get; init; }
     public DateTime LastEvent { get; private set; }
     public SemaphoreSlim Semaphore { get; } = new(1, 1);
+    public Guid SeedId { get; private set; }
 
-    public static GameBoard Generate(Guid seed, Difficulty difficulty, XyPair initialClick)
+    public static GameBoard Generate(Guid seedId, Guid seed, Difficulty difficulty, XyPair initialClick)
     {
         var dimensions = Definitions.GetDimensions(difficulty);
         var mineCount = Definitions.GetMineCount(difficulty);
@@ -44,6 +45,7 @@ public class GameBoard
             Clear = clear,
             Events = [new GameRequestClick { Button = "left", X = initialClick.X, Y = initialClick.Y }],
             LastEvent = DateTime.Now,
+            SeedId = seedId,
         };
     }
 
@@ -128,7 +130,7 @@ public class GameBoard
 
         if (cell == -1)
         {
-            yield return new LoseResponse();
+            yield return new LoseResponse { SeedId = SeedId };
             foreach (var mine in Mines.OrderBy(coord.PixelDistance))
             {
                 Thread.Sleep(20);
@@ -144,7 +146,7 @@ public class GameBoard
 
         if (Won())
         {
-            yield return new WinResponse();
+            yield return new WinResponse { SeedId = SeedId };
             yield return new ProgressResponse { Flagged = $"{Mines.Count} / {Mines.Count}" };
             yield break;
         }
