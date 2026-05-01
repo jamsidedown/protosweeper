@@ -20,14 +20,14 @@ public readonly struct XyPair(int x, int y) : IEquatable<XyPair>
     public override int GetHashCode() => HashCode.Combine(X, Y);
     public override string ToString() => $"({X}, {Y})";
 
-    public List<XyPair> Neighbours(XyPair bounds)
+    public List<XyPair> Neighbours(XyPair bounds, int range = 1)
     {
         var neighbours = new List<XyPair>();
 
-        for (var dx = -1; dx <= 1; dx++)
+        for (var dx = -range; dx <= range; dx++)
         {
             var x = X + dx;
-            for (var dy = -1; dy <= 1; dy++)
+            for (var dy = -range; dy <= range; dy++)
             {
                 if (dx == 0 && dy == 0)
                     continue;

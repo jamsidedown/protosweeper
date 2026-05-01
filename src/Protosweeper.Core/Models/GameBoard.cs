@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.XPath;
 using Protosweeper.Core.Extensions;
@@ -49,7 +50,7 @@ public class GameBoard
         };
     }
 
-    public async IAsyncEnumerable<IGameResponse> Click(GameRequestClick click, CancellationToken token)
+    public async IAsyncEnumerable<IGameResponse> Click(GameRequestClick click, [EnumeratorCancellation] CancellationToken token)
     {
         if (ReadOnly)
             yield break;
