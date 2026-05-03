@@ -2,6 +2,7 @@ let restUrl;
 let wsUrl;
 let difficulty;
 let websocket;
+let seed;
 let gameStarted = false;
 let ended = false;
 
@@ -182,4 +183,23 @@ function initialise(_restUrl, _wsUrl, _difficulty) {
         cell.addEventListener("contextmenu", e => e.preventDefault())
         cell.onmouseup = clickCell(cell.id);
     }
+}
+
+function initialiseWithSeed(_wsUrl, _difficulty) {
+    difficulty = _difficulty;
+    wsUrl = _wsUrl;
+
+    const cells = document.getElementsByClassName("cell");
+    for (const cell of cells) {
+        cell.addEventListener("contextmenu", e => e.preventDefault())
+        cell.onmouseup = clickCell(cell.id);
+    }
+
+    console.log(wsUrl);
+    connect(wsUrl);
+    gameStarted = true;
+
+    const gameUrlParagraph = document.getElementById("gameUrl");
+    gameUrlParagraph.innerHTML = `Game URL: <code>${wsUrl}</code>`;
+    gameUrlParagraph.hidden = false;
 }

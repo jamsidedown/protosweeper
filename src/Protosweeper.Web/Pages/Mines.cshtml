@@ -34,8 +34,19 @@
 @Html.AntiForgeryToken()
 
 <script src="site.js"></script>
-<script type="text/javascript">
-    window.onload = () => {
-        initialise("@Model.RestUrl", "@Model.WsUrl", "@Model.Difficulty");
-    };
-</script>
+    @if (string.IsNullOrEmpty(Model.GameId))
+    {
+        <script type="text/javascript">
+            window.onload = () => {
+                initialise("@Model.RestUrl", "@Model.WsUrl", "@Model.Difficulty");
+            };
+        </script>
+    }
+    else
+    {
+        <script type="text/javascript">
+            window.onload = () => {
+                initialiseWithSeed("@Model.WsUrl/@Model.GameId", "@Model.Difficulty");
+            };
+        </script>
+    }

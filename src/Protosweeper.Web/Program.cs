@@ -14,6 +14,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddLogging();
 builder.Services.AddAntiforgery();
 
+builder.Services.AddTransient<GameController>();
 builder.Services.AddTransient<GameService>();
 builder.Services.AddTransient<GameRepository>();
 

@@ -8,11 +8,19 @@
 <h1>Welcome</h1>
 
 <form method="get" action="/mines">
+    <p>Select a difficulty</p>
     <select id="difficulty-select" name="difficulty">
         <option value="beginner">Beginner</option>
         <option value="intermediate">Intermediate</option>
         <option value="expert">Expert</option>
     </select>
     
-    <input class="button" type="submit" value="Practice"/>
+    <input class="buttom" type="submit" value="New practice game" />
+</form>
+
+<form method="get" action="/mines">
+    <p>Or Enter a previous seed</p>
+    <input name="seed" id="seed" type="text"/>
+    
+    <input class="button" type="submit" value="Practice previous seed"/>
 </form>

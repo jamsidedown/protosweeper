@@ -16,7 +16,6 @@ public class GameService(GameRepository repo, ILogger<GameService> logger)
         var gameId = Guid.CreateVersion7();
         var seedId =  Guid.CreateVersion7();
         var seed = Guid.NewGuid();
-        // var seed = Guid.Parse("019d6342-7c29-79fd-a79a-ab3d7e785d0e");
         var gameBoard = GameBoard.Generate(seedId, seed, difficulty, initialClick);
         
         var gameEntity = new GameEntity
@@ -41,6 +40,31 @@ public class GameService(GameRepository repo, ILogger<GameService> logger)
         game.GameRunner = Play(gameEntity, game, cts.Token);
 
         return Games.TryAdd(gameId, game) ? gameId : throw new Exception("Unable to create game");
+    }
+
+    public async Task<(Guid, Difficulty)?> Practice(Guid seedId, CancellationToken token)
+    {
+        var (success, gameEntity) = await repo.TryGet(seedId, token);
+
+        if (!success || gameEntity is null)
+            return null;
+        
+        var gameId = Guid.CreateVersion7();
+        var initialClick = new XyPair(gameEntity.InitialX, gameEntity.InitialY);
+        var gameBoard = GameBoard.Generate(seedId, gameEntity.Seed, gameEntity.Difficulty, initialClick);
+
+        var cts = new CancellationTokenSource();
+        var game = new GameInPlay
+        {
+            GameId = gameId,
+            GameBoard = gameBoard,
+            GameEntity = gameEntity,
+            CancellationTokenSource = cts,
+        };
+        
+        game.GameRunner = Play(gameEntity, game, cts.Token);
+
+        return Games.TryAdd(gameId, game) ? (gameId, gameEntity.Difficulty) : throw new Exception("Unable to create game");
     }
 
     public (bool, GameInPlay?) Get(Guid gameId)

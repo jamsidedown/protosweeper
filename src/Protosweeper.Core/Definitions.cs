@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Protosweeper.Core.Exceptions;
 using Protosweeper.Core.Models;
 
@@ -38,5 +39,14 @@ public static class Definitions
             "intermediate" => Difficulty.Intermediate,
             "expert" => Difficulty.Expert,
             _ => Difficulty.Beginner,
+        };
+
+    public static string StringifyDifficulty(Difficulty difficulty) =>
+        difficulty switch
+        {
+            Difficulty.Beginner => "beginner",
+            Difficulty.Intermediate => "intermediate",
+            Difficulty.Expert => "expert",
+            _ => throw new InvalidEnumArgumentException(),
         };
 }
